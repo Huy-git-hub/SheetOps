@@ -514,7 +514,8 @@ hr {
   color: #97a59b;
   padding: 7px;
 }
-.user-dropdown button {
+.user-dropdown button,
+.user-dropdown a {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -527,7 +528,8 @@ hr {
   text-align: left;
   font-size: 15px;
 }
-.user-dropdown button:hover {
+.user-dropdown button:hover,
+.user-dropdown a:hover {
   background: #edf4ef;
 }
 .main-content {
@@ -1364,6 +1366,19 @@ td select {
   color: #a1ad99;
   max-width: 340px;
   margin: 0 auto;
+}
+.account-panel {
+  max-width: 560px;
+  margin-top: 24px;
+  padding: 28px;
+}
+.account-panel p {
+  margin: 0 0 16px;
+}
+.account-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 .detail-list > div {
   display: flex;

@@ -1,10 +1,16 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { acceptInvitationSession } from "@/lib/invitations";
+import {
+  verifyInvitationAccess,
+  type InvitationAccess,
+} from "@/lib/invitations";
 import { browserClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
-import { useWorkspace } from "@/components/workspace-provider";
+import {
+  useWorkspace,
+  type WorkspaceSession,
+} from "@/components/workspace-provider";
 export default function Accept() {
   const { establish, logout } = useWorkspace();
   const router = useRouter();
@@ -12,34 +18,47 @@ export default function Accept() {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
   const [pending, setPending] = useState(false);
-  const initialization = useRef<Promise<boolean> | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [retryable, setRetryable] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [account, setAccount] = useState<WorkspaceSession["profile"] | null>(
+    null,
+  );
+  const fragment = useRef<string | null>(null);
+  const initialization = useRef<Promise<
+    InvitationAccess<WorkspaceSession>
+  > | null>(null);
   useEffect(() => {
     let active = true;
     if (!initialization.current) {
-      const fragment = window.location.hash;
+      fragment.current ??= window.location.hash;
       // Remove credentials from the address bar before client initialization.
       window.history.replaceState(
         window.history.state,
         "",
         window.location.pathname,
       );
-      initialization.current = (async () => {
-        const valid = await acceptInvitationSession(
-          browserClient().auth,
-          fragment,
-        );
-        if (!valid) return false;
-        // Fresh server-side profile check also rejects disabled/unprovisioned users.
-        const response = await fetch("/api/session", { cache: "no-store" });
-        if (!response.ok) return false;
-        establish((await response.json()).data);
-        return true;
-      })().catch(() => false);
+      initialization.current = verifyInvitationAccess<WorkspaceSession>(
+        browserClient().auth,
+        fragment.current,
+        () => fetch("/api/session", { cache: "no-store" }),
+      );
     }
-    void initialization.current.then((valid) => {
+    void initialization.current.then((result) => {
       if (!active) return;
-      setReady(valid);
-      if (!valid)
+      setChecking(false);
+      setReady(result.state === "ready");
+      setRetryable(result.state === "unavailable");
+      if (result.state === "ready") {
+        fragment.current = "";
+        setAccount(result.session.profile);
+        establish(result.session);
+        setError("");
+      } else if (result.state === "unavailable") {
+        setError(
+          "Dịch vụ xác thực tạm thời không khả dụng. Hãy thử kiểm tra lại; chưa thể kết luận liên kết mời đã hết hạn.",
+        );
+      } else
         setError(
           "Lời mời không hợp lệ, đã hết hạn hoặc tài khoản chưa được cấp quyền. Hãy mở lại liên kết trong email hoặc liên hệ quản trị viên.",
         );
@@ -47,24 +66,51 @@ export default function Accept() {
     return () => {
       active = false;
     };
-  }, [establish]);
+  }, [establish, attempt]);
   return (
     <section className="login-form">
       <h1>Thiết lập mật khẩu</h1>
       <p>Hoàn tất tài khoản đã được quản trị viên mời.</p>
+      {ready && account && (
+        <p>
+          Tài khoản thiết lập mật khẩu: <strong>{account.email}</strong>
+        </p>
+      )}
+      {checking && <p role="status">Đang kiểm tra lời mời…</p>}
+      {retryable && (
+        <Button
+          type="button"
+          disabled={checking}
+          onClick={() => {
+            setChecking(true);
+            setError("");
+            initialization.current = null;
+            setAttempt((value) => value + 1);
+          }}
+        >
+          Thử kiểm tra lại
+        </Button>
+      )}
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!ready || pending) return;
+          if (!ready || !account || pending) return;
           setPending(true);
           setError("");
           try {
-            const allowed = await fetch("/api/session", { cache: "no-store" });
-            if (!allowed.ok) throw new Error("Account unavailable");
-            const { error } = await browserClient().auth.updateUser({
-              password,
+            const response = await fetch("/api/auth/password", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ profileId: account.id, password }),
             });
-            if (error) throw error;
+            if (!response.ok) {
+              const result = await response.json();
+              setError(
+                result.error?.message ??
+                  "Không thể đặt mật khẩu. Vui lòng thử lại.",
+              );
+              return;
+            }
             setPassword("");
             setReady(false);
             try {
@@ -78,7 +124,7 @@ export default function Accept() {
             router.replace("/login?reason=password_set");
           } catch {
             setError(
-              "Không thể đặt mật khẩu. Mật khẩu cần đủ mạnh và khác mật khẩu cũ.",
+              "Không thể kết nối để lưu mật khẩu. Vui lòng kiểm tra kết nối và thử lại.",
             );
           } finally {
             setPending(false);
@@ -89,7 +135,7 @@ export default function Accept() {
           Mật khẩu mới
           <input
             type="password"
-            minLength={12}
+            minLength={8}
             maxLength={72}
             disabled={!ready || pending}
             autoComplete="new-password"

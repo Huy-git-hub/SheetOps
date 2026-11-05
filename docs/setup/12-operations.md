@@ -4,7 +4,7 @@
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | 503 backend/môi trường        | APP_ENV đúng scope; production ref khai báo; URL/ref tương ứng; Production không có staging ref; build lại public env |
 | Login không quyền             | Auth user đúng project, password/email confirmed, profile active; không gán user_metadata role                        |
-| SQL missing relation/function | Đủ bảy migrations/thứ tự; không reset dữ liệu thật                                                                    |
+| SQL missing relation/function | Đủ tám migrations/thứ tự; không reset dữ liệu thật                                                                    |
 | Sheets 403/404                | API enabled, email service account, Share Editor, file ID không phải gid                                              |
 | PEM/private key lỗi           | private_key với header/footer/newline, không JSON hoặc file path                                                      |
 | Import bị chặn                | Orders trống cả bản ghi ẩn; sửa preview lỗi; không xóa dữ liệu để ép import                                           |

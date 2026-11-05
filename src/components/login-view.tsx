@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { Sheet, ArrowUpRight } from "lucide-react";
 import { api } from "./resource";
@@ -95,6 +96,7 @@ export function LoginPage({ reason }: { reason?: string }) {
             <ArrowUpRight size={17} />
           </Button>
         </form>
+        <Link href="/auth/forgot">Quên mật khẩu?</Link>
         <small className="muted">
           Không có đăng ký công khai. Liên hệ quản trị viên để được cấp quyền.
         </small>

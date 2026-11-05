@@ -43,6 +43,14 @@ describe("Phase 2 precise money", () => {
   );
   it("accepts BIGINT boundary", () =>
     expect(amountSchema.safeParse("9223372036854775807").success).toBe(true));
+  it.each(["-1", "1.5"])("explains the VND constraint for %s", (value) => {
+    const parsed = amountSchema.safeParse(value);
+    expect(parsed.success).toBe(false);
+    if (!parsed.success)
+      expect(parsed.error.issues.map((issue) => issue.message)).toEqual([
+        "Số tiền phải là số nguyên VND không âm",
+      ]);
+  });
 });
 describe("Sheets parsing and snapshots", () => {
   it("reads canonical string rows exactly", () => {

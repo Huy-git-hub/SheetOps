@@ -3,6 +3,7 @@ import {
   acceptInvitationSession,
   invitationFailure,
   invitationOrigin,
+  verifyInvitationAccess,
 } from "../src/lib/invitations";
 
 describe("invitation diagnostics", () => {
@@ -40,9 +41,10 @@ describe("invitation diagnostics", () => {
 describe("invitation session acceptance", () => {
   const client = () => ({
     setSession: vi.fn().mockResolvedValue({ error: null }),
-    getUser: vi
-      .fn()
-      .mockResolvedValue({ data: { user: { id: "test" } }, error: null }),
+    getUser: vi.fn().mockResolvedValue({
+      data: { user: { id: "test", invited_at: "2026-11-05T00:00:00Z" } },
+      error: null,
+    }),
   });
   it("explicitly exchanges the default invitation fragment before checking the user", async () => {
     const auth = client();
@@ -92,11 +94,98 @@ describe("invitation session acceptance", () => {
     ).toBe(false);
     expect(auth.getUser).not.toHaveBeenCalled();
   });
+  it("can recover from a temporary profile outage without accepting an unchecked session", async () => {
+    const auth = client();
+    const fragment = "#access_token=a&refresh_token=b&type=invite";
+    const load = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(
+        Response.json({ data: { profile: { id: "test" } } }),
+      );
+    expect(await verifyInvitationAccess(auth, fragment, load)).toEqual({
+      state: "unavailable",
+    });
+    expect(await verifyInvitationAccess(auth, fragment, load)).toEqual({
+      state: "ready",
+      session: { profile: { id: "test" } },
+    });
+    expect(auth.getUser).toHaveBeenCalledTimes(2);
+  });
+  it("distinguishes temporary Auth/network failures from expired or forbidden invitations", async () => {
+    const auth = client();
+    const load = vi.fn().mockResolvedValue(new Response(null, { status: 403 }));
+    auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: { status: 503 },
+    });
+    expect(await verifyInvitationAccess(auth, "", load)).toEqual({
+      state: "unavailable",
+    });
+    expect(load).not.toHaveBeenCalled();
+    expect(await verifyInvitationAccess(auth, "", load)).toEqual({
+      state: "invalid",
+    });
+    auth.getUser.mockRejectedValueOnce(new TypeError("network failed"));
+    expect(await verifyInvitationAccess(auth, "", load)).toEqual({
+      state: "unavailable",
+    });
+  });
+  it("does not retry an invalid fragment using an unrelated current session", async () => {
+    const auth = client();
+    const load = vi.fn();
+    expect(
+      await verifyInvitationAccess(auth, "#error=access_denied", load),
+    ).toEqual({ state: "invalid" });
+    expect(auth.getUser).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled();
+  });
+  it("keeps a temporarily failed token exchange retryable", async () => {
+    const auth = client();
+    auth.setSession.mockResolvedValue({ error: { status: 0 } });
+    const load = vi.fn();
+    expect(
+      await verifyInvitationAccess(
+        auth,
+        "#access_token=a&refresh_token=b&type=invite",
+        load,
+      ),
+    ).toEqual({ state: "unavailable" });
+    expect(auth.getUser).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled();
+  });
   it("validates server-issued callback cookies with getUser, never trusting session data alone", async () => {
     const auth = client();
     expect(await acceptInvitationSession(auth, "")).toBe(true);
     expect(auth.setSession).not.toHaveBeenCalled();
     auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
     expect(await acceptInvitationSession(auth, "")).toBe(false);
+  });
+  it("rejects an ordinary Admin login on an invitation page without invitation tokens", async () => {
+    const auth = client();
+    auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin" } },
+      error: null,
+    });
+    expect(await acceptInvitationSession(auth, "")).toBe(false);
+    const load = vi.fn();
+    expect(await verifyInvitationAccess(auth, "", load)).toEqual({
+      state: "invalid",
+    });
+    expect(load).not.toHaveBeenCalled();
+  });
+  it("rejects a server session for another account after verifying the invitation token", async () => {
+    const auth = client();
+    const load = vi
+      .fn()
+      .mockResolvedValue(Response.json({ data: { profile: { id: "other" } } }));
+    expect(
+      await verifyInvitationAccess(
+        auth,
+        "#access_token=a&refresh_token=b&type=invite",
+        load,
+      ),
+    ).toEqual({ state: "invalid" });
+    expect(auth.getUser).toHaveBeenCalledWith("a");
   });
 });

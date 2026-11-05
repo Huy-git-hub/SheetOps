@@ -4,9 +4,13 @@ import { isISODate, roles, statuses } from "./domain";
 export const amountSchema = z
   .string()
   .regex(/^(0|[1-9]\d{0,18})$/, "Số tiền phải là số nguyên VND không âm")
-  .refine(
-    (v) => /^(0|[1-9]\d{0,18})$/.test(v) && BigInt(v) <= 9223372036854775807n,
-    "Số tiền vượt giới hạn BIGINT",
+  .pipe(
+    z
+      .string()
+      .refine(
+        (v) => BigInt(v) <= 9223372036854775807n,
+        "Số tiền vượt giới hạn BIGINT",
+      ),
   );
 export const liveOrderInput = z
   .object({

@@ -124,7 +124,7 @@ npx --yes supabase@3.0.0 migration repair $appliedVersion --status applied --rem
 npx --yes supabase@3.0.0 migration list --remote=$targetRef
 ```
 
-`repair --status applied` **chỉ ghi history, không chạy SQL và không sửa schema**. Làm từng version được xác nhận, không quét tất cả file rồi đánh dấu hàng loạt. Nếu mới cài đúng bảy file chương 3 thì đối chiếu đúng bảy version đó; không đánh dấu migration phát triển sau này chưa chạy. Không tự INSERT/DELETE bảng `supabase_migrations.schema_migrations` hoặc dùng `--status reverted` để ép chạy lại SQL.
+`repair --status applied` **chỉ ghi history, không chạy SQL và không sửa schema**. Làm từng version được xác nhận, không quét tất cả file rồi đánh dấu hàng loạt. Đối chiếu đúng danh sách/version đã chạy ở chương 3; không đánh dấu migration phát triển sau này chưa chạy. Không tự INSERT/DELETE bảng `supabase_migrations.schema_migrations` hoặc dùng `--status reverted` để ép chạy lại SQL.
 
 4. Chạy dry run và xem chính xác các file còn chờ:
 
