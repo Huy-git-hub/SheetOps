@@ -137,7 +137,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Button>
             <span>Không gian làm việc</span>
             <span className="breadcrumb-slash">/</span>
-            <strong>{page?.label ?? "SheetOps"}</strong>
+            <strong>
+              {page?.label ?? (path === "/account" ? "Tài khoản" : "SheetOps")}
+            </strong>
           </div>
           <div className="topbar-right">
             <span className="demo-pill">
@@ -153,6 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <ChevronDown size={15} />
               </summary>
               <div className="user-dropdown">
+                <Link href="/account">Tài khoản của tôi</Link>
                 <button
                   onClick={async () => {
                     try {

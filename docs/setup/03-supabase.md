@@ -13,8 +13,11 @@
 | 5      | 20261102090827_phase2_rate_and_completion.sql |
 | 6      | 20261103135713_order_visibility.sql           |
 | 7      | 20261103174506_audit_pagination.sql           |
+| 8      | 20261105163217_update_own_profile_name.sql    |
 
 Chỉ áp dụng lên Supabase mới trống. PostgreSQL thuần thiếu auth.users/auth.uid() và roles Supabase, không tương đương hosted Supabase. Không seed tự động. Nếu lỗi, kiểm tra trạng thái schema trước khi chạy lại; không reset database có dữ liệu.
+
+Nếu hệ thống đã cài bảy file trước ngày 05/11/2026: không chạy lại các file đó. File thứ tám chỉ bổ sung RPC đổi tên hồ sơ của chính mình; cần review, backup và phê duyệt Production theo chương 13 trước khi áp. Giữ nhật ký SQL Editor và không repair migration history hàng loạt.
 
 4. SQL Editor chạy kiểm tra chỉ đọc:
 

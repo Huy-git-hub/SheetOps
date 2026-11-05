@@ -1,6 +1,6 @@
 # 8. Admin đầu tiên
 
-Thực hiện trên máy tin cậy bằng secrets Supabase MỚI, sau đủ bảy migrations. Không dùng metadata gán role.
+Thực hiện trên máy tin cậy bằng secrets Supabase MỚI, sau đủ tám migrations. Không dùng metadata gán role.
 
 1. Supabase → **Authentication → Users → Add user → Create new user**. Nhập email chủ sở hữu, password mạnh; xác nhận email bằng trusted dashboard nếu hỗ trợ. Copy **User UID**, không phải email. Auth user chưa đủ cấp quyền ứng dụng.
 2. Điền .env.local: BOOTSTRAP_ADMIN_ID=UUID đó, BOOTSTRAP_ADMIN_NAME=tên hiển thị. Kiểm tra APP_ENV=production, production ref và URL khớp project mới:

@@ -89,7 +89,7 @@ Chuẩn bị trước khi tới máy anh:
 
 1. [Supabase Dashboard](https://supabase.com/dashboard) → New project, tổ chức của anh, tên rõ là diễn tập nếu chọn A; lưu database password riêng. Dừng nếu yêu cầu billing ngoài phạm vi anh duyệt.
 2. Lấy ref, URL, publishable key và secret key theo [chương 3](setup/03-supabase.md). Public key có thể tới browser; secret key chỉ trên server.
-3. Xác nhận đây là database mới trống. Anh đồng ý áp schema trên project mới này, rồi mới chạy **đúng bảy migrations theo thứ tự chương 3** trong SQL Editor, từng file một.
+3. Xác nhận đây là database mới trống. Anh đồng ý áp schema trên project mới này, rồi mới chạy **đủ tám migrations theo thứ tự chương 3** trong SQL Editor, từng file một.
 4. Lưu nhật ký file/version, hash, thời điểm và kết quả; không nhấn Run lại khi chưa biết lần trước đã chạy tới đâu.
 5. Kiểm tra đủ bảng và RLS; Orders/Profile ban đầu chưa có dữ liệu. Auth bật Email, tắt public signup; thêm đúng URL local theo chương 3.
 

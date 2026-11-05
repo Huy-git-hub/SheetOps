@@ -120,6 +120,8 @@ async function main() {
       "select count(*) from public.audit_logs where resource_type='orders';",
       "1",
     );
+    stage = "self_profile_name";
+    sql(readFileSync("tests/sql/self-profile-name.sql", "utf8"));
     // Exercise the alternate platform-helper branch without reapplying indexes.
     sql(`create function public.rls_auto_enable() returns event_trigger
       language plpgsql as $$ begin return; end $$;
