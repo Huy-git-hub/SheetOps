@@ -1,0 +1,13 @@
+# Release process for the receiving owner
+
+Use [chapter 13](setup/13-development-workflow.md) for the detailed Vietnamese procedure and glossary. Prior release approvals apply only to historical installations; they never authorize this owner's next release. The old record is preserved in [archive](archive/RELEASE_PROCESS-before-final.md).
+
+1. Develop on `dev` with a clean working tree and reviewed diff. Keep source history, tests, security guards and versioned migrations; do not force-push. Run formatting, lint, typecheck, unit tests, build and isolated migration tests. Push only the authorized development/delivery branch.
+2. Confirm CI and Vercel Preview refer to the exact reviewed commit. Verify Preview backend, Sheet and secrets are independent staging configuration. Exercise affected paths using synthetic data and all relevant roles; do not run cleanup suites on retained data.
+3. Reconcile migration history before any cloud `db push`. List exact pending versions, review compatibility/locking/data impact, validate an upgrade on populated synthetic staging, and prepare a verified backup and rollback candidate. CI green does not authorize or execute cloud schema changes.
+4. Open PR `dev` → `main` with the concrete result, final SHA, CI/UAT evidence, migration/backup/deployment order, unverified gates and rollback plan. Do not auto-merge. Obtain explicit receiving-owner approval for the exact Production target and changes. A later commit requires renewed review.
+5. Only after approval: apply compatible Production migrations in the reviewed order, verify them, then merge/deploy the compatible code. If main is Vercel's Production branch, merging can immediately trigger deployment; approval must cover that consequence. Never add migration or seed commands to Vercel build.
+6. Check deployment SHA/Ready, read-only application smoke, errors and sync history. Real data writes, restoration or scheduled tests need their own authorized scope. Observe the actual cron schedule; a manual run does not prove the scheduler.
+7. If necessary, obtain approval to roll back to code compatible with the current schema. Keep applied schema/data; prepare corrective migrations rather than destructive undo. Restore only into a separate verified target, reconcile post-backup changes and obtain approval before cutover.
+
+Recommended GitHub controls: PRs for main, passing `verify`, no force-push/deletion, and documented emergency owner access without lockout. Verify available settings/plan; do not assume rules are active or purchase entitlement automatically. Synchronize the release merge back into dev through a reviewed normal merge.
